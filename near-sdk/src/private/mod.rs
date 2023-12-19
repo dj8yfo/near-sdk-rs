@@ -5,6 +5,9 @@ pub use near_abi::{
     AbiBorshParameter, AbiFunction, AbiFunctionKind, AbiFunctionModifier, AbiJsonParameter,
     AbiParameters, AbiType,
 };
+mod result_type_ext;
+
+pub use result_type_ext::ResultTypeExt;
 
 use crate::IntoStorageKey;
 use borsh::{to_vec, BorshSerialize};
