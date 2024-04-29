@@ -39,7 +39,7 @@ where
 
 impl<T> Extend<T> for Vector<T>
 where
-    T: BorshSerialize + BorshDeserialize,
+    T: BorshSerialize,
 {
     fn extend<I>(&mut self, iter: I)
     where

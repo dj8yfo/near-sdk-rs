@@ -11,10 +11,7 @@ const ERR_ELEMENT_DESERIALIZATION: &str = "Cannot deserialize element";
 const ERR_ELEMENT_SERIALIZATION: &str = "Cannot serialize element";
 
 #[near(inside_nearsdk)]
-pub(crate) struct IndexMap<T>
-where
-    T: BorshSerialize,
-{
+pub(crate) struct IndexMap<T> {
     pub(crate) prefix: Box<[u8]>,
     /// Cache for loads and intermediate changes to the underlying index map.
     /// The cached entries are wrapped in a [`Box`] to avoid existing pointers from being
@@ -26,10 +23,7 @@ where
     pub(crate) cache: StableMap<u32, OnceCell<CacheEntry<T>>>,
 }
 
-impl<T> IndexMap<T>
-where
-    T: BorshSerialize,
-{
+impl<T> IndexMap<T> {
     /// Create new index map. This creates a mapping of `u32` -> `T` in storage.
     ///
     /// This prefix can be anything that implements [`IntoStorageKey`]. The prefix is used when
@@ -46,6 +40,23 @@ where
         buf.extend_from_slice(&index.to_le_bytes());
     }
 
+    /// Sets a value at a given index to the value provided. If none is provided, this index will
+    /// be removed from storage.
+    pub fn set(&mut self, index: u32, value: Option<T>) {
+        let entry = self.cache.get_mut(index);
+        match entry.get_mut() {
+            Some(entry) => *entry.value_mut() = value,
+            None => {
+                let _ = entry.set(CacheEntry::new_modified(value));
+            }
+        }
+    }
+}
+
+impl<T> IndexMap<T>
+where
+    T: BorshSerialize,
+{
     /// Flushes the cache and writes all modified values to storage.
     pub fn flush(&mut self) {
         let mut buf = Vec::new();
@@ -76,23 +87,11 @@ where
             }
         }
     }
-
-    /// Sets a value at a given index to the value provided. If none is provided, this index will
-    /// be removed from storage.
-    pub fn set(&mut self, index: u32, value: Option<T>) {
-        let entry = self.cache.get_mut(index);
-        match entry.get_mut() {
-            Some(entry) => *entry.value_mut() = value,
-            None => {
-                let _ = entry.set(CacheEntry::new_modified(value));
-            }
-        }
-    }
 }
 
 impl<T> IndexMap<T>
 where
-    T: BorshSerialize + BorshDeserialize,
+    T: BorshDeserialize,
 {
     fn deserialize_element(raw_element: &[u8]) -> T {
         T::try_from_slice(raw_element)
@@ -154,10 +153,7 @@ where
     }
 }
 
-impl<T> fmt::Debug for IndexMap<T>
-where
-    T: BorshSerialize + BorshDeserialize + fmt::Debug,
-{
+impl<T> fmt::Debug for IndexMap<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("IndexMap").field("prefix", &self.prefix).finish()
     }

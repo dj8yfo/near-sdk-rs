@@ -5,10 +5,9 @@ use super::{Vector, ERR_INDEX_OUT_OF_BOUNDS};
 use crate::env;
 
 /// An iterator over references to each element in the stored vector.
-#[derive(Debug)]
 pub struct Iter<'a, T>
 where
-    T: BorshSerialize + BorshDeserialize,
+    T: BorshSerialize,
 {
     /// Underlying vector to iterate through
     vec: &'a Vector<T>,
@@ -18,7 +17,7 @@ where
 
 impl<'a, T> Iter<'a, T>
 where
-    T: BorshSerialize + BorshDeserialize,
+    T: BorshSerialize,
 {
     pub(super) fn new(vec: &'a Vector<T>) -> Self {
         Self { vec, range: Range { start: 0, end: vec.len() } }
@@ -73,10 +72,9 @@ where
 }
 
 /// An iterator over exclusive references to each element of a stored vector.
-#[derive(Debug)]
 pub struct IterMut<'a, T>
 where
-    T: BorshSerialize + BorshDeserialize,
+    T: BorshSerialize,
 {
     /// Mutable reference to vector used to iterate through.
     vec: &'a mut Vector<T>,
@@ -86,7 +84,7 @@ where
 
 impl<'a, T> IterMut<'a, T>
 where
-    T: BorshSerialize + BorshDeserialize,
+    T: BorshSerialize,
 {
     /// Creates a new iterator for the given storage vector.
     pub(crate) fn new(vec: &'a mut Vector<T>) -> Self {

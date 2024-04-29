@@ -118,6 +118,7 @@ fn expect_consistent_state<T>(val: Option<T>) -> T {
 pub struct Vector<T>
 where
     T: BorshSerialize,
+    // NOTE: this bound is required by `impl<T> Drop for Vector<T>`
 {
     pub(crate) len: u32,
     pub(crate) values: IndexMap<T>,
@@ -299,6 +300,46 @@ where
             self.len.checked_add(1).unwrap_or_else(|| env::panic_str(ERR_INDEX_OUT_OF_BOUNDS));
         self.set(last_idx, element)
     }
+    /// Returns an iterator over the vector. This iterator will lazily load any values iterated
+    /// over from storage.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use near_sdk::store::Vector;
+    ///
+    /// let mut vec = Vector::new(b"v");
+    /// vec.extend([1, 2, 4]);
+    /// let mut iterator = vec.iter();
+    ///
+    /// assert_eq!(iterator.next(), Some(&1));
+    /// assert_eq!(iterator.next(), Some(&2));
+    /// assert_eq!(iterator.next(), Some(&4));
+    /// assert_eq!(iterator.next(), None);
+    /// ```
+    pub fn iter(&self) -> Iter<T> {
+        Iter::new(self)
+    }
+
+    /// Returns an iterator over the [`Vector`] that allows modifying each value. This iterator
+    /// will lazily load any values iterated over from storage.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use near_sdk::store::Vector;
+    ///
+    /// let mut vec = Vector::new(b"v");
+    /// vec.extend([1u32, 2, 4]);
+    ///
+    /// for elem in vec.iter_mut() {
+    ///     *elem += 2;
+    /// }
+    /// assert_eq!(vec.iter().copied().collect::<Vec<_>>(), &[3u32, 4, 6]);
+    /// ```
+    pub fn iter_mut(&mut self) -> IterMut<T> {
+        IterMut::new(self)
+    }
 }
 
 impl<T> Vector<T>
@@ -434,47 +475,6 @@ where
         self.values.insert(index, element).unwrap()
     }
 
-    /// Returns an iterator over the vector. This iterator will lazily load any values iterated
-    /// over from storage.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use near_sdk::store::Vector;
-    ///
-    /// let mut vec = Vector::new(b"v");
-    /// vec.extend([1, 2, 4]);
-    /// let mut iterator = vec.iter();
-    ///
-    /// assert_eq!(iterator.next(), Some(&1));
-    /// assert_eq!(iterator.next(), Some(&2));
-    /// assert_eq!(iterator.next(), Some(&4));
-    /// assert_eq!(iterator.next(), None);
-    /// ```
-    pub fn iter(&self) -> Iter<T> {
-        Iter::new(self)
-    }
-
-    /// Returns an iterator over the [`Vector`] that allows modifying each value. This iterator
-    /// will lazily load any values iterated over from storage.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use near_sdk::store::Vector;
-    ///
-    /// let mut vec = Vector::new(b"v");
-    /// vec.extend([1u32, 2, 4]);
-    ///
-    /// for elem in vec.iter_mut() {
-    ///     *elem += 2;
-    /// }
-    /// assert_eq!(vec.iter().copied().collect::<Vec<_>>(), &[3u32, 4, 6]);
-    /// ```
-    pub fn iter_mut(&mut self) -> IterMut<T> {
-        IterMut::new(self)
-    }
-
     /// Creates a draining iterator that removes the specified range in the vector
     /// and yields the removed items.
     ///
@@ -527,16 +527,21 @@ where
     }
 }
 
+#[cfg(feature = "expensive-debug")]
 impl<T> fmt::Debug for Vector<T>
 where
     T: BorshSerialize + BorshDeserialize + fmt::Debug,
 {
-    #[cfg(feature = "expensive-debug")]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.iter().collect::<Vec<_>>(), f)
     }
+}
 
-    #[cfg(not(feature = "expensive-debug"))]
+#[cfg(not(feature = "expensive-debug"))]
+impl<T> fmt::Debug for Vector<T>
+where
+    T: BorshSerialize,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Vector")
             .field("len", &self.len)
