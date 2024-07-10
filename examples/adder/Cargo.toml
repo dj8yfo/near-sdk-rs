@@ -11,8 +11,8 @@ crate-type = ["cdylib"]
 near-sdk = { path = "../../near-sdk" }
 
 [package.metadata.near.reproducible_build]
-image = "dj8yfo/sourcescan:0.x.x-dev-cargo-near-finalization"
-image_digest = "sha256:f86a095cb3daed21d0b5f86a4b5d9da0c0e26835f85c42678e1d460c9caa2c12"
+image = "dj8yfo/sourcescan:0.x.x-dev-cargon-f-unlocked"
+image_digest = "sha256:f397f49e087d2f0654fed47bfeeed224e016cc02e32a4d346eb45834cfa950f1"
 container_build_command = ["cargo", "near", "build"]
 source_code_git_url = "https://github.com/near/near-sdk-rs.git"
 
