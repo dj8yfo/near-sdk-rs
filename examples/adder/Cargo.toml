@@ -30,3 +30,5 @@ opt-level = "z"
 lto = true
 debug = false
 panic = "abort"
+
+[workspace]
